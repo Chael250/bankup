@@ -66,4 +66,3 @@ export const getPaymentReports = async (startDate: Date, endDate: Date) => {
 export function updateLoanTerms(arg0: number, newAmount: any, newTerm: any) {
   throw new Error("Function not implemented.");
 }
-

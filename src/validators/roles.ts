@@ -32,3 +32,9 @@ export const validateRole = (
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const deleteRoleSchema = z.object({
+  id: z.string().min(1, 'Role ID is required').refine((val) => !isNaN(Number(val)), {
+    message: 'Role ID must be a valid number',
+  }),
+});

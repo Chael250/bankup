@@ -9,44 +9,15 @@ import { AuthService } from '../services/authService';
 import { UserService } from '../services/userService';
 import { uploadService } from '../services/uploadService';
 import { generateToken } from '../helpers/jwtToken';
-
-// Define validation schemas using Zod
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
-  fullName: z.string().min(1, "Full name is required"),
-  nationalIdNumber: z.string(),  
-  phoneNumber: z.string(),
-  address: z.string(),
-  dateOfBirth: z.date(),
-  gender: z.enum(["male","female","other"])
-});
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-});
-
-const verifyEmailSchema = z.object({
-  email: z.string().email(),
-  verificationCode: z.string().length(6, "Verification code must be 6 characters"),
-});
-
-const resetPasswordSchema = z.object({
-  email: z.string().email(),
-});
-
-const setNewPasswordSchema = z.object({
-  resetToken: z.string(),
-  newPassword: z.string().min(8, "Password must be at least 8 characters long"),
-});
+import { loginWithEmailSchema, registerType, resetPasswordSchema, setNewPasswordSchema, userRegistrationSchema, validateLoginWithEmail, verifyEmailCodeSchema } from "../validators/auth"
+import { formatZodError } from '../helpers';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
     try {
-      const body = registerSchema.parse(req.body);
+      const body:registerType = userRegistrationSchema.parse(req.body);
 
       const existingUser = await UserService.getUserByEmail(body.email);
       if (existingUser) {
@@ -70,7 +41,7 @@ export class AuthController {
       res.status(201).json({ message: 'User registered successfully' });
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ errors: error.errors });
+        res.status(400).json({ message: `Validation error: ${formatZodError(error)}` });
       } else {
         console.error(error.message);
         res.status(500).json({ message: 'Server error, please try again later' });
@@ -80,7 +51,7 @@ export class AuthController {
 
   static async loginWithEmail(req: Request, res: Response) {
     try {
-      const { email, password } = loginSchema.parse(req.body);
+      const { email, password } = loginWithEmailSchema.parse(req.body);
 
       const user = await UserService.getUserByEmail(email);
       if (!user) {
@@ -101,7 +72,7 @@ export class AuthController {
       res.status(200).json({ message: 'Verification code sent to email' });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ errors: error.errors });
+        res.status(400).json({ message: `Validation error: ${formatZodError(error)}` });
       } else {
         console.error(error);
         res.status(500).json({ message: 'Server error, please try again later' });
@@ -111,7 +82,7 @@ export class AuthController {
 
   static async verifyEmailCode(req: Request, res: Response) {
     try {
-      const { email, verificationCode } = verifyEmailSchema.parse(req.body);
+      const { email, verificationCode } = verifyEmailCodeSchema.parse(req.body);
 
       const user = await UserService.getUserByEmail(email);
       if (!user) {
@@ -130,7 +101,7 @@ export class AuthController {
       res.status(200).json({ message: 'Login successful', token });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ errors: error.errors });
+        res.status(400).json({ message: `Validation error: ${formatZodError(error)}` });
       } else {
         console.error(error);
         res.status(500).json({ message: 'Server error, please try again later' });
@@ -156,7 +127,7 @@ export class AuthController {
       res.status(200).json({ message: 'Password reset link sent to email' });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ errors: error.errors });
+        res.status(400).json({ message: `Validation error: ${formatZodError(error)}` });
       } else {
         console.error(error);
         res.status(500).json({ message: 'Server error, please try again later' });
@@ -186,7 +157,7 @@ export class AuthController {
       res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        res.status(400).json({ errors: error.errors });
+        res.status(400).json({ message: `Validation error: ${formatZodError(error)}` });
       } else {
         console.error(error);
         res.status(500).json({ message: 'Server error, please try again later' });

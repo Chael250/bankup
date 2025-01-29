@@ -5,7 +5,7 @@ import { Request, Response, NextFunction } from 'express';
 import { formatZodError } from '../helpers';
 
 // Zod schema to validate the request body and files
-const userRegistrationSchema = z.object({
+export const userRegistrationSchema = z.object({
     email: z.string({ required_error: "Email is required" }).email("Invalid email address"),
     fullName: z.string({ required_error: "Full name is required" })
         .min(3, "Full name must be at least 3 characters long")
@@ -74,7 +74,7 @@ export const validateRegister = (req: Request, res: Response, next: NextFunction
     }
 }
 
-const loginWithEmailSchema = z.object({
+export const loginWithEmailSchema = z.object({
     email: z.string({ required_error: "Email is required" }).email("Invalid email address"),
     password: z.string({ required_error: "Password is required" }),
 });
@@ -97,7 +97,7 @@ export const validateLoginWithEmail = (req: Request, res: Response, next: NextFu
     }
 };
 
-const verifyEmailCodeSchema = z.object({
+export const verifyEmailCodeSchema = z.object({
     email: z.string({ required_error: "Email is required" }).email("Invalid email address"),
     verificationCode: z.number({ required_error: "Verification code is required" }).positive("Invalid verification code"),
 });
@@ -120,7 +120,7 @@ export const validateVerifyEmailCode = (req: Request, res: Response, next: NextF
     }
 };
 
-const resetPasswordSchema = z.object({
+export const resetPasswordSchema = z.object({
     email: z.string({ required_error: "Email is required" }).email("Invalid email address"),
 });
 
@@ -140,7 +140,7 @@ export const validateResetPassword = (req: Request, res: Response, next: NextFun
     }
 };
 
-const setNewPasswordSchema = z.object({
+export const setNewPasswordSchema = z.object({
     newPassword: z.string({ required_error: "Password is required" })
         .min(8, { message: 'Password must be at least 8 characters long' })
         .regex(/[A-Z]/, { message: 'Password must include at least one uppercase letter' })

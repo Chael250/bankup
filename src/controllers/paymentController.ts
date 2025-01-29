@@ -2,32 +2,12 @@ import { Request, Response } from 'express';
 import { z } from 'zod';
 import PaymentModel from '../models/Payment';
 import LoanModel from '../models/Loan';
-
-// Define schemas for validation
-const paymentSchema = z.object({
-  loanId: z.string().min(1, 'Loan ID is required'),
-  amount: z.number().min(0.01, 'Amount must be greater than 0'),
-  paymentMethod: z.string().min(1, 'Payment method is required'),
-});
-
-const loanIdParamSchema = z.object({
-  loanId: z.string().min(1, 'Loan ID is required'),
-});
-
-const generatePaymentStatementSchema = z.object({
-  loanId: z.string().min(1, 'Loan ID is required'),
-  startDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: 'Invalid start date',
-  }),
-  endDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
-    message: 'Invalid end date',
-  }),
-});
+import { generatePaymentStatementSchema, loanIdParamSchema, paymentSchema, paymentSchemaType } from '../validators/payment';
+import { formatZodError } from '../helpers';
 
 export const makePayment = async (req: Request, res: Response) => {
   try {
-    // Validate request body using Zod
-    const validatedData = paymentSchema.parse(req.body);
+    const validatedData:paymentSchemaType = paymentSchema.parse(req.body);
 
     const { loanId, amount, paymentMethod } = validatedData;
 
@@ -44,16 +24,13 @@ export const makePayment = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: 'Payment successful', paymentId: payment.id });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Validation error', errors: error.errors });
-    }
+    if (error instanceof z.ZodError) return formatZodError(error)
     res.status(500).json({ message: 'Error processing payment', error });
   }
 };
 
 export const getPaymentHistory = async (req: Request, res: Response) => {
   try {
-    // Validate URL parameters using Zod
     const validatedParams = loanIdParamSchema.parse(req.params);
 
     const { loanId } = validatedParams;
@@ -63,7 +40,7 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
     res.status(200).json(payments);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Validation error', errors: error.errors });
+      res.status(400).send({message: `Validation error: ${formatZodError(error)}`})
     }
     res.status(500).json({ message: 'Error fetching payment history', error });
   }
@@ -71,7 +48,6 @@ export const getPaymentHistory = async (req: Request, res: Response) => {
 
 export const generatePaymentStatement = async (req: Request, res: Response) => {
   try {
-    // Validate query parameters using Zod
     const validatedQuery = generatePaymentStatementSchema.parse(req.query);
 
     const { loanId, startDate, endDate } = validatedQuery;
@@ -91,7 +67,7 @@ export const generatePaymentStatement = async (req: Request, res: Response) => {
     });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      res.status(400).json({ message: 'Validation error', errors: error.errors });
+      res.status(400).send({message: `Validation error: ${formatZodError(error)}`})
     }
     res.status(500).json({ message: 'Error generating payment statement', error });
   }
